@@ -1,0 +1,66 @@
+---
+
+- name: Populate service facts
+  service_facts:
+
+- name: Fail if Docker is not installed or running
+  fail:
+    msg: "Docker needs to be installed and running in order to perform netdata docker install"
+  when: not 'docker' in services or services['docker'].state != 'running'
+
+- name: Check is docker-compose is installed
+  shell: command -v docker-compose >/dev/null 2>&1
+  register: is_dockercompose_installed
+  changed_when: False
+  failed_when: "'not found' in is_dockercompose_installed.stderr"
+
+- name: Fail if docker-compose is not installed
+  fail:
+    msg: "docker-compose needs to be installed"
+  when: is_dockercompose_installed.rc != 0
+
+- name: Install python-docker
+  apt:
+    name: python-docker
+    state: latest
+    update_cache: true
+
+- name: Pull netdata image {{ nd_docker_image }}
+  docker_image:
+    name: "{{ nd_docker_image }}"
+    source: "pull"
+
+- name: Create netdata directory
+  file:
+    path: "{{ nd_docker_install_path }}"
+    state: directory
+
+- name: Create netdata config directory
+  file:
+    path: "{{ nd_docker_install_path }}/conf"
+    state: directory
+
+- name: Create netdata data directory
+  file:
+    path: "{{ nd_docker_install_path }}/data"
+    state: directory
+    mode: 0777
+
+- name: Create netdata dbengine directory
+  file:
+    path: "{{ nd_docker_install_path }}/dbengine"
+    state: directory
+    mode: 0777
+  when: nd_node_type == "master" and nd_memory_mode == "dbengine"
+
+- name: Get docker PGID
+  shell: grep docker /etc/group | cut -d ':' -f 3
+  register: docker_pgid
+  changed_when: False
+
+- name: Upload docker-compose
+  template:
+    src: "docker-compose.yml"
+    dest: "{{ nd_docker_install_path }}/docker-compose.yml"
+  notify:
+    - restart netdata (docker-compose)

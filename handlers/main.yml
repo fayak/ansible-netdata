@@ -1,0 +1,18 @@
+---
+
+- name: restart netdata (docker-compose)
+  docker_compose:
+    project_src: "{{ nd_docker_install_path }}"
+    state: "present"
+    restarted: true
+  when:
+    - nd_already_running|bool
+    - nd_docker_install|bool
+
+- name: reload netdata (docker-compose)
+  shell: docker-compose kill -s SIGUSR2
+  args:
+    chdir: "{{ nd_docker_install_path }}"
+  when:
+    - nd_already_running|bool
+    - nd_docker_install|bool

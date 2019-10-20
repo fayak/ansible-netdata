@@ -1,0 +1,12 @@
+---
+
+- name: Start netdata (docker-compose)
+  docker_compose:
+    project_src: "{{ nd_docker_install_path }}"
+    state: "present"
+  register: result
+  changed_when: result["changed"]
+
+- name: Set fact about netdata started
+  set_fact:
+    nd_already_running: "{{ not result['changed'] }}"

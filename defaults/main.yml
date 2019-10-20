@@ -1,0 +1,32 @@
+---
+
+nd_docker_install: true
+nd_docker_image: "netdata/netdata"
+nd_docker_install_path: "/srv/netdata"
+# Where to get netdata node's name
+# Set this setting to true to use the name given on ansible to the host
+# Set this setting to false to use the host's hostname ( $(hostname) )
+nd_use_inventory_name: true
+
+nd_node_type: "master"
+
+# On which (ip, port) should netdata bind to, to be accessible (including docker)
+# Set nd_bind to false to disable binding (docker install only)
+nd_bind:
+  ip: "0.0.0.0"
+  port: "19999"
+nd_master_registry_announce: "https://registry.my-netdata.io"
+
+# https://github.com/netdata/netdata/tree/master/streaming#allow-from
+nd_allow_from: "*"
+
+# https://docs.netdata.cloud/database/
+nd_memory_mode: "dbengine"
+nd_memory_update_every: 1
+
+# Useless for `dbengine` mode
+nd_memory_history: 86400
+
+# Useless for other mode than `dbengine`. In MiB
+nd_memory_dbengine_disk_space: 8192
+nd_memory_dbengine_caching: 1024

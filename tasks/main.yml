@@ -1,0 +1,20 @@
+---
+
+- import_tasks: docker_install.yml
+  when: nd_docker_install
+
+- name: Set netdata config path based if docker installed
+  set_fact:
+    nd_config_path: "{{ nd_docker_install_path }}/conf/"
+  when: nd_docker_install|bool
+
+- name: Fail if netdata config path isn't defined
+  fail:
+    msg: "Could not determine netdata config path, variable undefined"
+  when: nd_config_path is undefined
+
+- import_tasks: netdata_config_master.yml
+  when: nd_node_type == "master"
+
+- import_tasks: netdata_docker_start.yml
+  when: nd_docker_install

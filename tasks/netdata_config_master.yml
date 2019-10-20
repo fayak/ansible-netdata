@@ -1,0 +1,50 @@
+---
+
+- name: Check if uuid was already generated
+  stat:
+    path: "{{ nd_config_path }}/uuid"
+  register: stat_result
+
+- name: Install uuid-runtime
+  apt:
+    name: uuid-runtime
+    state: present
+  when: not stat_result.stat.exists
+
+- name: Generate uuid
+  shell: "uuidgen > {{ nd_config_path}}/uuid"
+  when: not stat_result.stat.exists
+
+- name: Get node uuid
+  slurp:
+    src: "{{ nd_config_path }}/uuid"
+  register: uuid
+
+- name: Set uuid fact
+  set_fact:
+    nd_uuid: "{{ uuid['content'] | b64decode | replace('\n', '') }}"
+
+- name: Set stream.conf
+  template:
+    src: stream.conf
+    dest:  "{{ nd_config_path }}/stream.conf"
+    mode: 0644
+  notify:
+    - restart netdata (docker-compose)
+
+- name: Install netdata.conf
+  template:
+    src: netdata.conf
+    dest: "{{ nd_docker_install_path }}/conf/netdata.conf"
+    mode: 0644
+  notify:
+    - restart netdata (docker-compose)
+
+- name: Install health_alarm_notify.conf
+  template:
+    src: health_alarm_notify.conf
+    dest: "{{ nd_docker_install_path }}/conf/health_alarm_notify.conf"
+    mode: 0644
+  notify:
+    - reload netdata (docker-compose)
+

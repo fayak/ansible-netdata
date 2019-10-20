@@ -1,0 +1,28 @@
+version: '3'
+services:
+  netdata:
+    image: "{{ nd_docker_image }}"
+    hostname: "{{ inventory_hostname if nd_use_inventory_name else ansible_facts['nodename'] }}"
+    {% if nd_node_type == "master" and nd_bind.port is defined -%}
+    ports:
+      - {{ nd_bind.ip }}:{{ nd_bind.port }}:{{ nd_bind.port }}
+    {% endif -%}
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      PGID: {{ docker_pgid.stdout }}
+    volumes:
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - {{ nd_docker_install_path }}/conf/netdata.conf:/etc/netdata/netdata.conf
+      - {{ nd_docker_install_path }}/conf/stream.conf:/etc/netdata/stream.conf
+      - {{ nd_docker_install_path }}/conf/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf
+      - {{ nd_docker_install_path }}/data:/var/lib/netdata/
+{% if nd_node_type == "master" and nd_memory_mode == "dbengine" %}
+      - {{ nd_docker_install_path }}/dbengine:/var/cache/netdata/dbengine/
+{% endif %}
